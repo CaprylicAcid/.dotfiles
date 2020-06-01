@@ -15,7 +15,7 @@ xset r rate 300 50
  alias polybarconf="nvim ~/.config/polybar/config"
  alias hotkeyconf="nvim ~/.config/sxhkd/sxhkdrc"
  alias docs=" cd /home/milk/Documents\ /Programs/Python"
- alias recordscreen=" ffmpeg -f x11grab -video_size 1920x1080 -framerate 60 -i :0.0 -f jack -i default -preset ultrafast -crf 18 -pix_fmt yuv420p "
+ alias recordscreen=" ffmpeg -f x11grab -video_size 1920x1080 -framerate 60 -i :0.0 -f pulse -i default -preset ultrafast -crf 18 -pix_fmt yuv420p "
  alias qtileconf="nvim ~/.config/qtile/config.py"  
 
 # Keep screen on at times 

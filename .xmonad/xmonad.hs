@@ -6,6 +6,7 @@
 ---IMPORTS
 ------------------------------------------------------------------------
     -- Base
+import XMonad.Layout.Gaps
 import XMonad
 import XMonad.Config.Desktop
 import Data.Monoid
@@ -23,7 +24,7 @@ import XMonad.Util.SpawnOnce
 
     -- Hooks
 import XMonad.Hooks.DynamicLog (dynamicLogWithPP, defaultPP, wrap, pad, xmobarPP, xmobarColor, shorten, PP(..))
-import XMonad.Hooks.ManageDocks (avoidStruts, docksStartupHook, manageDocks, ToggleStruts(..))
+import XMonad.Hooks.ManageDocks (avoidStruts,SetStruts(..), docksStartupHook, manageDocks, ToggleStruts(..))
 import XMonad.Hooks.ManageHelpers (isFullscreen, isDialog,  doFullFloat, doCenterFloat) 
 import XMonad.Hooks.Place (placeHook, withGaps, smart)
 import XMonad.Hooks.SetWMName
@@ -125,14 +126,11 @@ myKeys =
         [ ("M-C-r", spawn "xmonad --recompile")      -- Recompiles xmonad
         , ("M-S-r", spawn "xmonad --restart")        -- Restarts xmonad
         , ("M-S-e", io exitSuccess)                  -- Quits xmonad
-    
-    -- Windows
         , ("M-S-q", kill1)                           -- Kill the currently focused client
-
         -- Floating windows
         , ("M-<Delete>", withFocused $ windows . W.sink)  -- Push floating window back to tile.
         , ("M-S-<Delete>", sinkAll)                  -- Push ALL floating windows back to tile.
-
+        , (("M-<Insert>"), sendMessage $ SetStruts [] [minBound .. maxBound])
     -- Windows navigation
         , ("M-m", windows W.focusMaster)             -- Move focus to the master window
         , ("M-j", windows W.focusDown)               -- Move focus to the next window
@@ -140,7 +138,7 @@ myKeys =
         , ("M-S-m", windows W.swapMaster)            -- Swap the focused window and the master window
         , ("M-S-j", windows W.swapDown)              -- Swap the focused window with the next window
         , ("M-S-k", windows W.swapUp)                -- Swap the focused window with the prev window
-        , ("M-<Backspace>", promote)                 -- Moves focused window to master, all others maintain order
+        , ("M-<Space>", promote)                 -- Moves focused window to master, all others maintain order
         , ("M1-S-<Tab>", rotSlavesDown)              -- Rotate all windows except master and keep focus in place
         , ("M1-C-<Tab>", rotAllDown)                 -- Rotate all the windows in the current stack
         , ("M-S-s", windows copyToAll)  
@@ -163,7 +161,7 @@ myKeys =
 
     -- Layouts
         , ("M-<Tab>", sendMessage NextLayout)                              -- Switch to next layout
-        , ("M-S-<Space>", sendMessage ToggleStruts)                          -- Toggles struts
+        , ("M-S-<Insert>", sendMessage ToggleStruts)                          -- Toggles struts
         , ("M-S-n", sendMessage $ Toggle NOBORDERS)                          -- Toggles noborder
         , ("M-f", sendMessage (Toggle NBFULL) >> sendMessage ToggleStruts) -- Toggles noborder/full
         , ("M-S-f", sendMessage (T.Toggle "float"))
@@ -257,33 +255,58 @@ myWorkspaces = clickable . (map xmobarEscape)
 myManageHook :: Query (Data.Monoid.Endo WindowSet)
 myManageHook = composeAll
      [
-        className =? "Firefox"     --> doShift "<action=xdotool key super+2>www</action>"
-      , title =? "Vivaldi"         --> doShift "<action=xdotool key super+2>www</action>"
-      , title =? "irssi"           --> doShift "<action=xdotool key super+6>chat</action>"
-      , className =? "cmus"        --> doShift "<action=xdotool key super+7>media</action>"
-      , className =? "vlc"         --> doShift "<action=xdotool key super+7>media</action>"
-      , className =? "Virtualbox"  --> doFloat
-      , className =? "Pavucontrol"        --> doFloat
-      , className =? "Gimp"        --> doShift "<action=xdotool key super+8>gfx</action>"
-      , (className =? "Firefox" <&&> resource =? "Dialog") --> doFloat  -- Float Firefox Dialog
+       className =? "Pavucontrol"        --> doFloat
+       ,className =? "KeePassXC"        --> doFloat
+       ,className =? "Arandr"        --> doFloat
      ] <+> namedScratchpadManageHook myScratchPads
 
 ------------------------------------------------------------------------
 ---LAYOUTS
 ------------------------------------------------------------------------
 
+tall         = renamed [Replace "tall"]    
+               $ limitWindows 12
+               $ spacing 6 
+               $ ResizableTall 1 (3/100) (1/2) []
+
+grid         = renamed [Replace "grid"]     
+               $ limitWindows 12 
+               $ spacing 6 
+               $ mkToggle (single MIRROR) 
+               $ Grid (16/10)
+
+threeCol     = renamed [Replace "threeCol"] 
+               $ limitWindows 12 
+               $ ThreeCol 1 (3/100) (1/2) 
+
+threeColMid  = renamed [Replace "threeColMid"]
+               $ limitWindows 12 
+               $ spacing 6 
+               $ ThreeColMid 1 (20/100) (56/100) 
+
+oneBig       = renamed [Replace "oneBig"]   
+               $ limitWindows 6  
+               $ Mirror $ mkToggle (single MIRROR) 
+               $ mkToggle (single REFLECTX) 
+               $ mkToggle (single REFLECTY) 
+               $ OneBig (5/9) (8/12)
+
+space        = renamed [Replace "space"]    
+               $ limitWindows 4  
+               $ spacing 12 $ Mirror 
+               $ mkToggle (single MIRROR) 
+               $ mkToggle (single REFLECTX) 
+               $ mkToggle (single REFLECTY) 
+               $ OneBig (2/3) (2/3)
+
+floats       = renamed [Replace "floats"]   
+               $ limitWindows 20 
+               $ simplestFloat
+
 myLayoutHook = avoidStruts $ mouseResize $ windowArrange $ T.toggleLayouts floats $ 
                mkToggle (NBFULL ?? NOBORDERS ?? EOT) $ myDefaultLayout
              where 
-                 myDefaultLayout = tall ||| grid ||| threeCol ||| oneBig ||| space ||| floats
-
-
-tall       = renamed [Replace "tall"]     $ limitWindows 12 $ spacing 6 $ ResizableTall 1 (3/100) (1/2) []
-grid       = renamed [Replace "grid"]     $ limitWindows 12 $ spacing 6 $ mkToggle (single MIRROR) $ Grid (16/10)
-threeCol   = renamed [Replace "threeCol"] $ limitWindows 3  $ ThreeCol 1 (3/100) (1/2) 
-oneBig     = renamed [Replace "oneBig"]   $ limitWindows 6  $ Mirror $ mkToggle (single MIRROR) $ mkToggle (single REFLECTX) $ mkToggle (single REFLECTY) $ OneBig (5/9) (8/12)
-space      = renamed [Replace "space"]    $ limitWindows 4  $ spacing 12 $ Mirror $ mkToggle (single MIRROR) $ mkToggle (single REFLECTX) $ mkToggle (single REFLECTY) $ OneBig (2/3) (2/3)
-floats     = renamed [Replace "floats"]   $ limitWindows 20 $ simplestFloat
+                 myDefaultLayout = tall  ||| threeColMid ||| oneBig ||| space ||| floats
 
 ------------------------------------------------------------------------
 ---SCRATCHPADS

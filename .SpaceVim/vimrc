@@ -26,3 +26,5 @@ if 1
 endif
 " vim:set et sw=2
 set clipboard=unnamedplus
+let g:OmniSharp_server_stdio = 1
+
