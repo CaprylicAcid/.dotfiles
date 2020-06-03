@@ -82,6 +82,9 @@ windowCount     = gets $ Just . show . length . W.integrate' . W.stack . W.works
 main = do
     -- Launching three instances of xmobar on their monitors.
     xmproc0 <- spawnPipe "xmobar -x 0 /home/milk/.config/xmobar/xmobarrc0"
+    xmproc1 <- spawnPipe "xmobar -x 1 /home/milk/.config/xmobar/xmobarrc2"
+
+
     -- the xmonad, ya know...what the WM is named after!
     xmonad $ ewmh desktopConfig
         { manageHook = ( isFullscreen --> doFullFloat ) <+> myManageHook <+> manageHook desktopConfig <+> manageDocks
@@ -264,6 +267,12 @@ myManageHook = composeAll
 ---LAYOUTS
 ------------------------------------------------------------------------
 
+myLayoutHook = avoidStruts $ mouseResize $ windowArrange $ T.toggleLayouts floats $ 
+               mkToggle (NBFULL ?? NOBORDERS ?? EOT) $ myDefaultLayout
+             where 
+                 myDefaultLayout = tall  ||| threeColMid ||| oneBig ||| space ||| floats
+
+
 tall         = renamed [Replace "tall"]    
                $ limitWindows 12
                $ spacing 6 
@@ -302,11 +311,6 @@ space        = renamed [Replace "space"]
 floats       = renamed [Replace "floats"]   
                $ limitWindows 20 
                $ simplestFloat
-
-myLayoutHook = avoidStruts $ mouseResize $ windowArrange $ T.toggleLayouts floats $ 
-               mkToggle (NBFULL ?? NOBORDERS ?? EOT) $ myDefaultLayout
-             where 
-                 myDefaultLayout = tall  ||| threeColMid ||| oneBig ||| space ||| floats
 
 ------------------------------------------------------------------------
 ---SCRATCHPADS
